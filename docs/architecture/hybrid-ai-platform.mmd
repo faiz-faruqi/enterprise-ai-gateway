@@ -1,0 +1,31 @@
+flowchart LR
+    User[Business User]
+    UI[Open WebUI]
+    API[FastAPI Orchestrator]
+    Redis[Redis Cache]
+    Embed[SentenceTransformers]
+    Qdrant[Qdrant Vector DB]
+    Docs[Enterprise Documents]
+    Ollama[Ollama Local LLM\nWindows Node]
+    OpenRouter[OpenRouter Cloud LLM]
+    n8n[n8n Workflows]
+
+    User --> UI
+    UI --> API
+    n8n --> API
+
+    Docs --> API
+    API --> Embed
+    Embed --> Qdrant
+    API --> Qdrant
+    Qdrant --> API
+
+    API --> Redis
+    Redis --> API
+
+    API -->|Primary| Ollama
+    API -->|Fallback| OpenRouter
+    Ollama --> API
+    OpenRouter --> API
+
+    API --> UI
