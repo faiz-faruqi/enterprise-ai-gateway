@@ -43,7 +43,7 @@ class OllamaClient:
         }
 
         async with httpx.AsyncClient(timeout=self._timeout) as client:
-            response = client.post(
+            response = await client.post(  # fix: was missing `await`
                 f"{self._base_url}/api/generate",
                 json=payload,
             )

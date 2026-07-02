@@ -9,6 +9,7 @@ Key design choices:
   the same question over a different document set will not return a stale answer.
 - TTL is configurable via CACHE_TTL_SECONDS (default: 3600s).
 - Cache invalidation is manual: if documents are re-indexed, flush the cache.
+- Accepts either REDIS_URL (Railway / cloud) or REDIS_HOST + REDIS_PORT (local/Docker).
 """
 
 import hashlib
@@ -20,6 +21,7 @@ import redis.asyncio as aioredis
 
 logger = logging.getLogger(__name__)
 
+REDIS_URL = os.getenv("REDIS_URL", "")
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "3600"))
@@ -30,6 +32,10 @@ CACHE_KEY_PREFIX = "llm:response:"
 class ResponseCache:
     """
     Async Redis client for prompt-response caching.
+
+    Automatically prefers REDIS_URL (connection string) when set —
+    required for Railway's managed Redis add-on. Falls back to
+    REDIS_HOST + REDIS_PORT for local Docker Compose usage.
 
     Usage:
         cache = ResponseCache()
@@ -42,11 +48,17 @@ class ResponseCache:
 
     def __init__(
         self,
+        redis_url: str = REDIS_URL,
         host: str = REDIS_HOST,
         port: int = REDIS_PORT,
         ttl: int = CACHE_TTL_SECONDS,
     ) -> None:
-        self._client = aioredis.Redis(host=host, port=port, decode_responses=True)
+        if redis_url:
+            self._client = aioredis.from_url(redis_url, decode_responses=True)
+            logger.info("Redis cache initialised via REDIS_URL.")
+        else:
+            self._client = aioredis.Redis(host=host, port=port, decode_responses=True)
+            logger.info("Redis cache initialised via host=%s port=%d.", host, port)
         self._ttl = ttl
 
     def _make_key(self, prompt: str) -> str:

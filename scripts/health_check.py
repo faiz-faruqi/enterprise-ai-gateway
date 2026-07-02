@@ -1,70 +1,91 @@
 """
 Platform health check script.
 
-Validates connectivity to all platform components and prints a status table.
+Verifies that all components of the platform are reachable and operational:
+  - FastAPI /health endpoint
+  - Redis (via the API health response)
+  - Vector store (Qdrant or pgvector, via the API health response)
+  - Ollama (optional — only checked if OLLAMA_BASE_URL is configured)
 
 Usage:
     python scripts/health_check.py
+    python scripts/health_check.py --api-url http://localhost:8000
+    python scripts/health_check.py --api-url https://api.yourdomain.com
+
+Exit codes:
+    0 — all components healthy
+    1 — one or more components unreachable or reporting errors
 """
 
-import asyncio
-import os
+import argparse
+import json
 import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-import httpx
-
-FASTAPI_URL = os.getenv("FASTAPI_URL", "http://localhost:8000")
-QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
-REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
-OLLAMA_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+import urllib.request
+from typing import Any
 
 
-async def check_http(name: str, url: str) -> tuple[str, bool, str]:
+def check_health(api_url: str) -> dict[str, Any]:
+    """Call the FastAPI /health endpoint and return the parsed JSON response."""
+    url = f"{api_url.rstrip('/')}/health"
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            resp = await client.get(url)
-            ok = resp.status_code < 400
-            return name, ok, f"HTTP {resp.status_code}"
+        with urllib.request.urlopen(url, timeout=10) as resp:  # noqa: S310
+            return json.loads(resp.read().decode())
     except Exception as exc:
-        return name, False, str(exc)
+        print(f"[FAIL] Cannot reach {url}: {exc}", file=sys.stderr)
+        sys.exit(1)
 
 
-async def check_redis() -> tuple[str, bool, str]:
-    try:
-        import redis.asyncio as aioredis
-        client = aioredis.Redis(host=REDIS_HOST, port=REDIS_PORT)
-        result = await client.ping()
-        return "Redis", result, "PONG" if result else "No response"
-    except Exception as exc:
-        return "Redis", False, str(exc)
+def print_status(label: str, status: str) -> bool:
+    """Print a status line. Returns True if healthy, False otherwise."""
+    is_ok = status == "ok"
+    symbol = "OK  " if is_ok else "FAIL"
+    print(f"  [{symbol}] {label}: {status}")
+    return is_ok
 
 
-async def run_checks() -> None:
-    checks = await asyncio.gather(
-        check_http("FastAPI", f"{FASTAPI_URL}/health"),
-        check_http("Qdrant", f"{QDRANT_URL}/healthz"),
-        check_http("Ollama", f"{OLLAMA_URL}/api/tags"),
-        check_http("Open WebUI", "http://localhost:3000"),
-        check_redis(),
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Check platform component health.")
+    parser.add_argument(
+        "--api-url",
+        default="http://localhost:8000",
+        help="Base URL of the FastAPI backend (default: http://localhost:8000)",
     )
+    args = parser.parse_args()
 
-    print("\n── Platform Health Check ────────────────────────────")
-    print(f"{'Component':<20} {'Status':<10} {'Detail'}")
-    print("─" * 55)
+    print(f"\nChecking platform health at: {args.api_url}\n")
+    health = check_health(args.api_url)
+
     all_ok = True
-    for name, ok, detail in checks:
-        status = "✓ OK" if ok else "✗ FAIL"
-        print(f"{name:<20} {status:<10} {detail}")
-        if not ok:
-            all_ok = False
-    print("─" * 55)
-    print("All systems operational.\n" if all_ok else "One or more components unreachable.\n")
-    sys.exit(0 if all_ok else 1)
+
+    # Top-level status
+    top = health.get("status", "unknown")
+    ok = print_status("API", top)
+    all_ok = all_ok and ok
+
+    # Metadata
+    print(f"\n  version     : {health.get('version', 'unknown')}")
+    print(f"  vector_store: {health.get('vector_store', 'unknown')}")
+    print(f"  demo_mode   : {health.get('demo_mode', False)}")
+    print()
+
+    # Component statuses
+    components = health.get("components", {})
+    if components:
+        print("  Components:")
+        for component, status in components.items():
+            ok = print_status(f"  {component}", status)
+            all_ok = all_ok and ok
+    else:
+        print("  No component details returned.")
+
+    print()
+    if all_ok:
+        print("All components healthy.\n")
+        sys.exit(0)
+    else:
+        print("One or more components are unhealthy. Check logs above.\n")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
-    asyncio.run(run_checks())
+    main()

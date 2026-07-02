@@ -49,7 +49,7 @@ class OpenRouterClient:
         headers = {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
-            "HTTP-Referer": "https://github.com/your-username/local-first-hybrid-ai-platform",
+            "HTTP-Referer": "https://github.com/faiz-faruqi/local-first-hybrid-ai-platform",
         }
         payload = {
             "model": self._model,

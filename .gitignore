@@ -1,41 +1,53 @@
-# Environment
-.env
-*.env
-
 # Python
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
+*$py.class
+*.so
 .Python
-*.egg-info/
-dist/
 build/
+dist/
+*.egg-info/
+.eggs/
 *.egg
-.venv/
-venv/
-env/
+pip-wheel-metadata/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+htmlcov/
+.coverage
+*.cover
+.hypothesis/
 
-# Docker volumes (local dev)
-qdrant_storage/
-redis_data/
+# Environment
+.env
+.env.local
+.env.*.local
 
-# Documents / data (never commit sensitive enterprise content)
-sample-docs/*.pdf
-sample-docs/*.docx
-data/
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
 
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
+
+# OS
 .DS_Store
 Thumbs.db
 
-# Logs
+# Node / Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/npm-debug.log*
+
+# Docker
 *.log
-logs/
+
+# Model cache
+.cache/
+models/
