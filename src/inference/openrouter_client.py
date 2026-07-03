@@ -63,5 +63,5 @@ class OpenRouterClient:
                 json=payload,
             )
             response.raise_for_status()
-            data = response.json()
+            data = await response.json()
             return data["choices"][0]["message"]["content"]
