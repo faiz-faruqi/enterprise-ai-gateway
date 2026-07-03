@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { InferenceProvider, QueryResponse, SourceDocument } from "@/lib/api";
-import { queryDocuments } from "@/lib/api";
+import { getHealth, queryDocuments } from "@/lib/api";
 import ResponseMeta from "./ResponseMeta";
 import SourceDocs from "./SourceDocs";
 
@@ -35,8 +35,23 @@ export default function ChatPanel({ onResponse, onLoading, onReset }: ChatPanelP
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [forceCloud, setForceCloud] = useState(false);
+  const [demoMode, setDemoMode] = useState<boolean | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    let alive = true;
+    getHealth()
+      .then((h) => {
+        if (alive) setDemoMode(h.demo_mode);
+      })
+      .catch(() => {
+        if (alive) setDemoMode(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   function handleReset() {
     setMessages([]);
@@ -215,26 +230,31 @@ export default function ChatPanel({ onResponse, onLoading, onReset }: ChatPanelP
         className="border-t pt-3 mt-3 space-y-2"
         style={{ borderColor: "var(--rule)" }}
       >
-        {/* Force cloud toggle */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setForceCloud((v) => !v)}
-            className="flex items-center gap-2 font-mono text-xs transition-colors"
-            style={{ color: forceCloud ? "var(--coral)" : "var(--ink-4)" }}
-          >
-            <span
-              className="inline-block w-3 h-3 rounded border-2 transition-colors"
-              style={{
-                borderColor: forceCloud ? "var(--coral)" : "var(--rule)",
-                background: forceCloud ? "var(--coral)" : "transparent",
-              }}
-            />
-            Force cloud
-          </button>
-          <span className="font-mono text-xs" style={{ color: "var(--ink-4)" }}>
-            (route to OpenRouter)
-          </span>
-        </div>
+        {/* Force cloud toggle — only meaningful in production mode.
+            In demo mode the router already sends every request to
+            OpenRouter (skips Ollama), so the toggle is a no-op and
+            would only mislead. */}
+        {demoMode === false && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setForceCloud((v) => !v)}
+              className="flex items-center gap-2 font-mono text-xs transition-colors"
+              style={{ color: forceCloud ? "var(--coral)" : "var(--ink-4)" }}
+            >
+              <span
+                className="inline-block w-3 h-3 rounded border-2 transition-colors"
+                style={{
+                  borderColor: forceCloud ? "var(--coral)" : "var(--rule)",
+                  background: forceCloud ? "var(--coral)" : "transparent",
+                }}
+              />
+              Force cloud
+            </button>
+            <span className="font-mono text-xs" style={{ color: "var(--ink-4)" }}>
+              (bypass Ollama → OpenRouter)
+            </span>
+          </div>
+        )}
 
         {/* Text area + send */}
         <div className="flex gap-2 items-end">
