@@ -1,13 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import type { InferenceProvider } from "@/lib/api";
 import ArchDiagram from "@/components/ArchDiagram";
 import ChatPanel from "@/components/ChatPanel";
 
 export default function DemoPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [activeProvider, setActiveProvider] = useState<InferenceProvider | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (status === "unauthenticated") router.push("/auth/signin");
+  }, [status, router]);
+
+  if (status === "loading" || status === "unauthenticated") {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "var(--paper)", color: "var(--ink)" }}
+      >
+        <svg
+          className="w-6 h-6 animate-spin"
+          viewBox="0 0 24 24"
+          fill="none"
+          style={{ color: "var(--accent)" }}
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            opacity="0.25"
+          />
+          <path
+            d="M12 2a10 10 0 0 1 10 10"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+        </svg>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -74,6 +114,29 @@ export default function DemoPage() {
             >
               GitHub →
             </a>
+            {session?.user?.name && (
+              <span
+                className="font-mono text-xs px-3 py-1 rounded-full border"
+                style={{
+                  borderColor: "var(--rule)",
+                  background: "var(--rule-light)",
+                  color: "var(--ink-3)",
+                }}
+              >
+                {session.user.name}
+              </span>
+            )}
+            <button
+              onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+              className="font-mono text-xs px-3 py-1 rounded-full border transition-colors hover:opacity-80"
+              style={{
+                borderColor: "var(--rule)",
+                background: "var(--paper)",
+                color: "var(--ink-3)",
+              }}
+            >
+              Sign out
+            </button>
           </div>
         </div>
       </header>
