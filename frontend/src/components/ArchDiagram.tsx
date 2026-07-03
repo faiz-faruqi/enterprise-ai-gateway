@@ -58,14 +58,14 @@ export default function ArchDiagram({ activeProvider, isLoading }: ArchDiagramPr
     } else if (activeProvider === "cloud") {
       setHl({ user: true, fastapi: true, qdrant: true, openrouter: true, response: true });
     }
-
-    const timer = setTimeout(() => setHl({}), 3500);
-    return () => clearTimeout(timer);
   }, [activeProvider, isLoading]);
 
-  const dim = (id: string) => (hl[id] ? "" : "opacity-30");
+  // No active highlight → keep full pipeline visible (no dimming).
+  // Only dim non-active nodes once a specific path has lit up.
+  const hasHighlight = Object.values(hl).some(Boolean);
+  const dim = (id: string) => (!hasHighlight || hl[id] ? "" : "opacity-30");
   const color = (id: string, on: string, off = "var(--ink-4)") =>
-    hl[id] ? on : off;
+    hasHighlight && hl[id] ? on : off;
 
   const lastPath = (): string => {
     if (isLoading) return "processing…";
