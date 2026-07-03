@@ -9,12 +9,15 @@ This implements ADR 0001 (Local-First Hybrid Inference Strategy).
 """
 
 import logging
+import os
 from enum import Enum
 
 from src.inference.ollama_client import OllamaClient
 from src.inference.openrouter_client import OpenRouterClient
 
 logger = logging.getLogger(__name__)
+
+DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() == "true"
 
 
 class ProviderResult(str, Enum):
@@ -49,7 +52,7 @@ class InferenceRouter:
         Returns:
             A tuple of (response_text, provider_used).
         """
-        if not force_cloud:
+        if not force_cloud and not DEMO_MODE:
             try:
                 logger.info("Routing to local inference (Ollama).")
                 response = await self._ollama.complete(prompt)
