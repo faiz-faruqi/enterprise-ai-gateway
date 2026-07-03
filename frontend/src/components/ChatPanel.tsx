@@ -109,23 +109,21 @@ export default function ChatPanel({ onResponse, onLoading, onReset }: ChatPanelP
 
   return (
     <div className="flex flex-col h-full">
-      {/* Toolbar */}
-      {messages.length > 0 && (
-        <div className="flex justify-end mb-2">
-          <button
-            onClick={handleReset}
-            disabled={loading}
-            className="font-mono text-xs px-3 py-1 rounded-lg border transition-colors disabled:opacity-40 hover:opacity-80"
-            style={{
-              borderColor: "var(--rule)",
-              background: "var(--paper)",
-              color: "var(--ink-3)",
-            }}
-          >
-            ↺ New chat
-          </button>
-        </div>
-      )}
+      {/* Toolbar — always visible so a fresh query is one click away */}
+      <div className="flex justify-end mb-2">
+        <button
+          onClick={handleReset}
+          disabled={loading}
+          className="font-mono text-xs px-3 py-1 rounded-lg border transition-colors disabled:opacity-40 hover:opacity-80"
+          style={{
+            borderColor: "var(--rule)",
+            background: "var(--paper)",
+            color: "var(--ink-3)",
+          }}
+        >
+          ↺ New chat
+        </button>
+      </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-1 py-2 space-y-4 min-h-0">
