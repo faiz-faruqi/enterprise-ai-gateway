@@ -202,10 +202,10 @@ export default function ChatPanel({ onResponse, onLoading }: ChatPanelProps) {
                 background: forceCloud ? "var(--coral)" : "transparent",
               }}
             />
-            Force cloud fallback
+            Force cloud
           </button>
           <span className="font-mono text-xs" style={{ color: "var(--ink-4)" }}>
-            (bypass local inference)
+            (route to OpenRouter)
           </span>
         </div>
 

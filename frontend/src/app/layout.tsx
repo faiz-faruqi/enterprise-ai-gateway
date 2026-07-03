@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Local-First Hybrid AI Platform — Live Demo",
   description:
-    "Privacy-aware enterprise document intelligence: RAG + local inference + semantic caching. Built by Faiz Faruqi.",
+    "Privacy-aware enterprise document intelligence: RAG + hybrid inference + semantic caching. Built by Faiz Faruqi.",
   openGraph: {
     title: "Local-First Hybrid AI Platform",
     description: "Enterprise GenAI architecture demo: hybrid inference routing, RAG, and semantic caching.",

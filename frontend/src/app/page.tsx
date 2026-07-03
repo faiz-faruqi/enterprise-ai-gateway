@@ -152,7 +152,7 @@ export default function DemoPage() {
                 { step: "01", title: "Query ingested", desc: "FastAPI receives the natural language query." },
                 { step: "02", title: "Semantic retrieval", desc: "Top-k chunks pulled from Qdrant / pgvector." },
                 { step: "03", title: "Cache lookup", desc: "Redis checked — hit returns instantly at <10ms." },
-                { step: "04", title: "Inference routing", desc: "Cache miss → Ollama (local) or OpenRouter (cloud)." },
+                { step: "04", title: "Inference routing", desc: "Cache miss → OpenRouter (cloud) via mistral-7b-instruct." },
                 { step: "05", title: "Cache write", desc: "Response stored in Redis before returning to user." },
               ].map(({ step, title, desc }) => (
                 <div key={step} className="flex gap-3 items-start">
