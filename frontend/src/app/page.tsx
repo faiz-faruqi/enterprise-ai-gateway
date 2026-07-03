@@ -102,9 +102,9 @@ export default function DemoPage() {
               <h2 className="text-base font-semibold" style={{ color: "var(--ink)" }}>
                 Document Intelligence Demo
               </h2>
-              <p className="text-xs mt-1" style={{ color: "var(--ink-3)", lineHeight: 1.6 }}>
-                Querying 5 synthetic vendor contracts. Watch the architecture diagram respond to each query.
-              </p>
+                <p className="text-xs mt-1" style={{ color: "var(--ink-3)", lineHeight: 1.6 }}>
+                  Querying 5 synthetic vendor contracts. The flow diagram shows the path each request takes.
+                </p>
             </div>
             <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
               <ChatPanel
@@ -131,7 +131,7 @@ export default function DemoPage() {
                   Request Routing
                 </h2>
                 <p className="text-xs mt-1" style={{ color: "var(--ink-3)", lineHeight: 1.6 }}>
-                  Active path lights up after each query. Nodes fade after 3.5 seconds.
+                  The active path highlights after each query, reflecting which provider served the request.
                 </p>
               </div>
               <ArchDiagram activeProvider={activeProvider} isLoading={isLoading} />
