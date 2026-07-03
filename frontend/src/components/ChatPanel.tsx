@@ -20,6 +20,7 @@ export interface Message {
 interface ChatPanelProps {
   onResponse: (provider: InferenceProvider | null) => void;
   onLoading: (loading: boolean) => void;
+  onReset?: () => void;
 }
 
 const SAMPLE_QUERIES = [
@@ -29,13 +30,23 @@ const SAMPLE_QUERIES = [
   "What SLA commitments are specified in the agreements?",
 ];
 
-export default function ChatPanel({ onResponse, onLoading }: ChatPanelProps) {
+export default function ChatPanel({ onResponse, onLoading, onReset }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [forceCloud, setForceCloud] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  function handleReset() {
+    setMessages([]);
+    setInput("");
+    setForceCloud(false);
+    onResponse(null);
+    onLoading(false);
+    onReset?.();
+    inputRef.current?.focus();
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -98,6 +109,24 @@ export default function ChatPanel({ onResponse, onLoading }: ChatPanelProps) {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Toolbar */}
+      {messages.length > 0 && (
+        <div className="flex justify-end mb-2">
+          <button
+            onClick={handleReset}
+            disabled={loading}
+            className="font-mono text-xs px-3 py-1 rounded-lg border transition-colors disabled:opacity-40 hover:opacity-80"
+            style={{
+              borderColor: "var(--rule)",
+              background: "var(--paper)",
+              color: "var(--ink-3)",
+            }}
+          >
+            ↺ New chat
+          </button>
+        </div>
+      )}
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-1 py-2 space-y-4 min-h-0">
         {messages.length === 0 && (

@@ -54,11 +54,17 @@ export default function ArchDiagram({ activeProvider, isLoading }: ArchDiagramPr
     if (activeProvider === "cache") {
       setHl({ user: true, fastapi: true, redis: true, response: true });
     } else if (activeProvider === "local") {
-      setHl({ user: true, fastapi: true, qdrant: true, ollama: true, response: true });
+      // In demo mode the "local" tier is actually served via OpenRouter,
+      // so highlight the cloud node instead of the (absent) Ollama node.
+      if (demoMode) {
+        setHl({ user: true, fastapi: true, qdrant: true, openrouter: true, response: true });
+      } else {
+        setHl({ user: true, fastapi: true, qdrant: true, ollama: true, response: true });
+      }
     } else if (activeProvider === "cloud") {
       setHl({ user: true, fastapi: true, qdrant: true, openrouter: true, response: true });
     }
-  }, [activeProvider, isLoading]);
+  }, [activeProvider, isLoading, demoMode]);
 
   // No active highlight → keep full pipeline visible (no dimming).
   // Only dim non-active nodes once a specific path has lit up.
@@ -70,6 +76,12 @@ export default function ArchDiagram({ activeProvider, isLoading }: ArchDiagramPr
   const lastPath = (): string => {
     if (isLoading) return "processing…";
     if (activeProvider === "cache") return "User → FastAPI → Redis (hit) → User";
+    if (demoMode) {
+      if (activeProvider === "local" || activeProvider === "cloud") {
+        return "User → FastAPI → Qdrant → OpenRouter → User";
+      }
+      return "awaiting first query";
+    }
     if (activeProvider === "local") return "User → FastAPI → Qdrant → Ollama → User";
     if (activeProvider === "cloud") return "User → FastAPI → Qdrant → OpenRouter → User";
     return "awaiting first query";
@@ -138,12 +150,21 @@ export default function ArchDiagram({ activeProvider, isLoading }: ArchDiagramPr
         <div className={dim("fastapi")} style={{ color: color("fastapi", "var(--accent-mid)") }}>
           │  cache miss → infer
         </div>
-        <div className={dim("ollama")} style={{ color: color("ollama", "var(--accent)") }}>
-          ├─▶ Ollama (local)        [PRIMARY]
-        </div>
-        <div className={dim("openrouter")} style={{ color: color("openrouter", "#993c1d") }}>
-        └─▶ OpenRouter (cloud)     [FALLBACK]
-        </div>
+        {demoMode === true && (
+          <div className={dim("openrouter")} style={{ color: color("openrouter", "#993c1d") }}>
+            └─▶ OpenRouter (mistral-7b-instruct)
+          </div>
+        )}
+        {demoMode === false && (
+          <>
+            <div className={dim("ollama")} style={{ color: color("ollama", "var(--accent)") }}>
+              ├─▶ Ollama (local)        [PRIMARY]
+            </div>
+            <div className={dim("openrouter")} style={{ color: color("openrouter", "#993c1d") }}>
+            └─▶ OpenRouter (cloud)     [FALLBACK]
+            </div>
+          </>
+        )}
         <div className={dim("fastapi")} style={{ color: color("fastapi", "var(--accent-mid)") }}>
           │
         </div>
