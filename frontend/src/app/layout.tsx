@@ -3,12 +3,12 @@ import "./globals.css";
 import Providers from "./providers";
 
 export const metadata: Metadata = {
-  title: "Local-First Hybrid AI Platform — Live Demo",
+  title: "Enterprise AI Gateway — Intelligent Multi-LLM Routing",
   description:
-    "Privacy-aware enterprise document intelligence: RAG + hybrid inference + semantic caching. Built by Faiz Faruqi.",
+    "A policy-driven AI gateway that classifies queries and routes them to the optimal LLM based on complexity, sensitivity, cost, and latency. Built by Faiz Faruqi.",
   openGraph: {
-    title: "Local-First Hybrid AI Platform",
-    description: "Enterprise GenAI architecture demo: hybrid inference routing, RAG, and semantic caching.",
+    title: "Enterprise AI Gateway — Intelligent Multi-LLM Routing",
+    description: "Intelligent multi-LLM routing platform: query classification, policy-driven model selection, cost-aware routing, and vendor-neutral inference.",
     type: "website",
   },
 };

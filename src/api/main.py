@@ -19,13 +19,16 @@ logger = logging.getLogger(__name__)
 DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() == "true"
 
 app = FastAPI(
-    title="Local-First Hybrid AI Platform",
+    title="Enterprise AI Gateway",
     description=(
-        "Privacy-aware enterprise document intelligence using RAG, "
-        "local-first inference, and semantic response caching.\n\n"
+        "Intelligent Multi-LLM Routing Platform — a policy-driven gateway that "
+        "classifies queries by complexity, domain, sensitivity, and cost, then "
+        "routes each request to the optimal model (GPT-4o, Claude, Gemini, local Llama). "
+        "Includes RAG orchestration, semantic caching, budget enforcement, and "
+        "intelligent fallback.\n\n"
         + ("**Demo mode active** — local inference tier uses mistral-7b-instruct via OpenRouter." if DEMO_MODE else "")
     ),
-    version="0.2.0",
+    version="0.3.0",
 )
 
 app.add_middleware(
@@ -55,7 +58,7 @@ async def health() -> dict:
 
     status: dict = {
         "status": "ok",
-        "version": "0.2.0",
+        "version": "0.3.0",
         "demo_mode": DEMO_MODE,
         "vector_store": VECTOR_STORE_BACKEND,
         "components": {},
@@ -95,9 +98,10 @@ async def health() -> dict:
 @app.get("/", tags=["System"])
 async def root() -> dict:
     return {
-        "service": "local-first-hybrid-ai-platform",
-        "version": "0.2.0",
+        "service": "enterprise-ai-gateway",
+        "version": "0.3.0",
         "docs": "/docs",
         "health": "/health",
+        "models": "/models",
         "demo_mode": DEMO_MODE,
     }

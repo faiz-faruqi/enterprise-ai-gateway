@@ -1,4 +1,4 @@
-# Local-First Hybrid AI Platform
+# Enterprise AI Gateway — Intelligent Multi-LLM Routing Platform
 
 ![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.111-green?logo=fastapi)
@@ -6,7 +6,7 @@
 ![License](https://img.shields.io/badge/License-MIT-lightgrey)
 ![Status](https://img.shields.io/badge/Status-Portfolio%20Project-orange)
 
-A production-style GenAI platform for **enterprise document intelligence** that combines retrieval-augmented generation (RAG), local inference, cloud fallback, and semantic response caching.
+A policy-driven AI gateway that **classifies every incoming query across six dimensions** (complexity, domain, sensitivity, context size, RAG need, latency) and **routes it to the optimal LLM** — balancing cost, quality, governance, and resilience across GPT-4o, GPT-5, Claude, Gemini, and on-premises models.
 
 Built as an architecture portfolio artefact demonstrating patterns relevant to:
 
@@ -19,15 +19,23 @@ Built as an architecture portfolio artefact demonstrating patterns relevant to:
 
 ## Problem Statement
 
-Enterprises want AI-assisted answers over internal documents without routing sensitive content to external model providers, while also managing unpredictable per-token cloud costs.
+Enterprises adopting AI face a common set of architectural challenges:
 
-This platform addresses that by combining:
+- **Which model should we use?** Different queries need different capabilities — a simple factual question shouldn't consume GPT-5 tokens.
+- **How do we reduce AI costs?** Per-token pricing across multiple vendors is unpredictable and hard to govern.
+- **How do we maintain quality?** Complex reasoning tasks need premium models; simple tasks don't.
+- **How do we comply with governance?** Confidential data must stay on-premises; public data can use cloud APIs.
+- **How do we avoid vendor lock-in?** A single-provider strategy creates dependency and pricing risk.
 
-- **Local-first inference** (Ollama / Gemma 2) for privacy-sensitive workloads
-- **Cloud fallback** (OpenRouter) for resilience and higher-complexity reasoning
-- **Semantic response caching** (Redis) to eliminate redundant model calls
-- **Vector retrieval** (Qdrant) to ground answers in enterprise content only
-- **Decoupled control and inference planes** for flexible deployment topology
+This gateway addresses all of these by introducing an **intelligent routing layer** between users and LLM providers:
+
+- **Multi-dimensional query classification** — every query is analyzed for complexity, domain, sensitivity, context size, RAG need, and latency requirements
+- **Policy-driven model selection** — a Decision Engine evaluates routing policies (governance, FinOps, complexity, confidence) to select the optimal model
+- **Cost-aware routing** — Redis-backed budget tracking downgrades to cheaper models when spend caps are exceeded
+- **Vendor-neutral architecture** — OpenRouter abstraction provides access to GPT, Claude, Gemini, and local models through a single API
+- **RAG orchestration** — conditional retrieval grounds answers in enterprise documents when needed
+- **Semantic response caching** — eliminates redundant model calls
+- **Intelligent fallback** — ordered fallback chain ensures resilience when a provider fails
 
 ---
 
@@ -214,13 +222,16 @@ Architecture Decision Records document all major trade-offs:
 
 This project is an architecture portfolio artefact. It is intentionally scoped to demonstrate:
 
-- **Hybrid inference routing** with privacy-first defaults
+- **Intelligent multi-LLM routing** via a policy-driven Decision Engine
+- **Multi-dimensional query classification** (complexity, domain, sensitivity, cost, RAG, latency)
+- **Cost-aware routing** with Redis-backed budget enforcement (FinOps)
+- **Governance-aware routing** — confidential data stays on-premises
+- **Vendor-neutral architecture** — GPT, Claude, Gemini, and local models through one API
 - **Enterprise RAG patterns** with grounded, context-constrained responses
-- **Cost optimisation** through semantic caching
 - **Architectural decision making** documented via ADRs
 - **Operational thinking** via runbooks and deployment topology
 
-> **Portfolio positioning:** Designed and implemented a local-first hybrid GenAI platform integrating FastAPI, Qdrant, Ollama, Redis, and OpenRouter — enabling privacy-aware enterprise document intelligence with semantic caching and resilient multi-tier inference routing.
+> **Portfolio positioning:** Designed and implemented an Enterprise AI Gateway — a policy-driven intelligent routing platform that classifies queries across six dimensions and selects the optimal LLM based on complexity, sensitivity, cost budget, and latency. Integrates FastAPI, LangGraph-style orchestration, Qdrant/pgvector, Redis, and OpenRouter to provide vendor-neutral, governance-aware, cost-optimised multi-model inference.
 
 ---
 
