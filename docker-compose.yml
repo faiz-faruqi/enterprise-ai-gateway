@@ -21,6 +21,8 @@ services:
       - CACHE_TTL_SECONDS=${CACHE_TTL_SECONDS:-3600}
       - EMBEDDING_MODEL=${EMBEDDING_MODEL:-all-MiniLM-L6-v2}
       - LOG_LEVEL=${LOG_LEVEL:-info}
+      - BUDGET_DAILY_USD=${BUDGET_DAILY_USD:-0}
+      - BUDGET_MONTHLY_USD=${BUDGET_MONTHLY_USD:-0}
     depends_on:
       qdrant:
         condition: service_healthy

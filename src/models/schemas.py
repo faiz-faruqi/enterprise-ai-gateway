@@ -8,6 +8,9 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
+from src.models.classification import QueryProfile
+from src.models.routing import RoutingDecision
+
 
 class InferenceProvider(str, Enum):
     """Which inference provider handled the request."""
@@ -36,6 +39,14 @@ class QueryRequest(BaseModel):
         default=False,
         description="Bypass local inference and use cloud provider directly.",
     )
+    model: str | None = Field(
+        default=None,
+        description=(
+            "Optional model alias to force a specific provider "
+            "(e.g. 'gpt-4o', 'claude-sonnet', 'local-gemma'). "
+            "If omitted, the gateway selects the model automatically (Phase 3)."
+        ),
+    )
 
 
 class SourceDocument(BaseModel):
@@ -50,11 +61,25 @@ class SourceDocument(BaseModel):
 class QueryResponse(BaseModel):
     """Response returned to the user."""
 
+    model_config = {"protected_namespaces": ()}
+
     answer: str
     provider: InferenceProvider
     cached: bool
     sources: list[SourceDocument]
     latency_ms: float
+    model_alias: str | None = Field(
+        default=None,
+        description="The model alias that actually handled the request (e.g. 'gpt-4o').",
+    )
+    classification: QueryProfile | None = Field(
+        default=None,
+        description="Multi-dimensional query classification (Phase 2).",
+    )
+    routing_decision: RoutingDecision | None = Field(
+        default=None,
+        description="The Decision Engine's model selection verdict (Phase 3).",
+    )
 
 
 class IngestRequest(BaseModel):
@@ -69,3 +94,20 @@ class IngestResponse(BaseModel):
     chunks_indexed: int
     collection: str
     document_name: str
+
+
+class ModelInfo(BaseModel):
+    """Public description of a routable model (returned by GET /models)."""
+
+    model_config = {"protected_namespaces": ()}
+
+    alias: str
+    vendor: str
+    model_id: str
+    tier: str
+    context_window: int
+    cost_per_1k_input: float
+    cost_per_1k_output: float
+    latency_tier: str
+    is_local: bool
+    description: str

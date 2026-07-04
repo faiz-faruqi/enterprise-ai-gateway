@@ -1,8 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { InferenceProvider, QueryResponse, SourceDocument } from "@/lib/api";
-import { getHealth, queryDocuments } from "@/lib/api";
+import type {
+  InferenceProvider,
+  ModelInfo,
+  QueryProfile,
+  QueryResponse,
+  RoutingDecision,
+  SourceDocument,
+} from "@/lib/api";
+import { getHealth, getModels, queryDocuments } from "@/lib/api";
 import ResponseMeta from "./ResponseMeta";
 import SourceDocs from "./SourceDocs";
 
@@ -14,6 +21,9 @@ export interface Message {
   cached?: boolean;
   latencyMs?: number;
   sources?: SourceDocument[];
+  modelAlias?: string | null;
+  classification?: QueryProfile | null;
+  routingDecision?: RoutingDecision | null;
   error?: boolean;
 }
 
@@ -36,6 +46,8 @@ export default function ChatPanel({ onResponse, onLoading, onReset }: ChatPanelP
   const [loading, setLoading] = useState(false);
   const [forceCloud, setForceCloud] = useState(false);
   const [demoMode, setDemoMode] = useState<boolean | null>(null);
+  const [models, setModels] = useState<ModelInfo[]>([]);
+  const [selectedModel, setSelectedModel] = useState<string>("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -48,6 +60,13 @@ export default function ChatPanel({ onResponse, onLoading, onReset }: ChatPanelP
       .catch(() => {
         if (alive) setDemoMode(false);
       });
+    getModels()
+      .then((m) => {
+        if (alive) setModels(m);
+      })
+      .catch(() => {
+        // Models endpoint unavailable — model selector stays empty (auto-routing only)
+      });
     return () => {
       alive = false;
     };
@@ -57,6 +76,7 @@ export default function ChatPanel({ onResponse, onLoading, onReset }: ChatPanelP
     setMessages([]);
     setInput("");
     setForceCloud(false);
+    setSelectedModel("");
     onResponse(null);
     onLoading(false);
     onReset?.();
@@ -87,6 +107,7 @@ export default function ChatPanel({ onResponse, onLoading, onReset }: ChatPanelP
         query: trimmed,
         top_k: 5,
         force_cloud: forceCloud,
+        model: selectedModel || undefined,
       });
 
       const assistantMsg: Message = {
@@ -97,6 +118,9 @@ export default function ChatPanel({ onResponse, onLoading, onReset }: ChatPanelP
         cached: result.cached,
         latencyMs: result.latency_ms,
         sources: result.sources,
+        modelAlias: result.model_alias,
+        classification: result.classification,
+        routingDecision: result.routing_decision,
       };
       setMessages((prev) => [...prev, assistantMsg]);
       onResponse(result.provider);
@@ -145,7 +169,9 @@ export default function ChatPanel({ onResponse, onLoading, onReset }: ChatPanelP
         {messages.length === 0 && (
           <div className="pt-4">
             <p className="text-sm mb-4" style={{ color: "var(--ink-3)" }}>
-              Ask questions about the sample vendor contract portfolio. Try one of these:
+              Ask questions about the sample vendor contract portfolio. The AI Gateway
+              will automatically classify your query and route it to the optimal model.
+              Try one of these:
             </p>
             <div className="flex flex-col gap-2">
               {SAMPLE_QUERIES.map((q) => (
@@ -195,6 +221,9 @@ export default function ChatPanel({ onResponse, onLoading, onReset }: ChatPanelP
                       provider={msg.provider}
                       cached={msg.cached ?? false}
                       latencyMs={msg.latencyMs ?? 0}
+                      modelAlias={msg.modelAlias}
+                      classification={msg.classification}
+                      routingDecision={msg.routingDecision}
                     />
                     {msg.sources && <SourceDocs sources={msg.sources} />}
                   </>
@@ -230,31 +259,61 @@ export default function ChatPanel({ onResponse, onLoading, onReset }: ChatPanelP
         className="border-t pt-3 mt-3 space-y-2"
         style={{ borderColor: "var(--rule)" }}
       >
-        {/* Force cloud toggle — only meaningful in production mode.
-            In demo mode the router already sends every request to
-            OpenRouter (skips Ollama), so the toggle is a no-op and
-            would only mislead. */}
-        {demoMode === false && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setForceCloud((v) => !v)}
-              className="flex items-center gap-2 font-mono text-xs transition-colors"
-              style={{ color: forceCloud ? "var(--coral)" : "var(--ink-4)" }}
-            >
-              <span
-                className="inline-block w-3 h-3 rounded border-2 transition-colors"
+        {/* Model selector (Phase 1) + Force cloud toggle */}
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Model selector dropdown */}
+          {models.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs" style={{ color: "var(--ink-4)" }}>
+                model:
+              </span>
+              <select
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                disabled={loading}
+                className="font-mono text-xs px-2 py-1 rounded-lg border transition-colors disabled:opacity-40"
                 style={{
-                  borderColor: forceCloud ? "var(--coral)" : "var(--rule)",
-                  background: forceCloud ? "var(--coral)" : "transparent",
+                  borderColor: "var(--rule)",
+                  background: "var(--paper)",
+                  color: "var(--ink-2)",
                 }}
-              />
-              Force cloud
-            </button>
-            <span className="font-mono text-xs" style={{ color: "var(--ink-4)" }}>
-              (bypass Ollama → OpenRouter)
-            </span>
-          </div>
-        )}
+              >
+                <option value="">auto (gateway decides)</option>
+                {models.map((m) => (
+                  <option key={m.alias} value={m.alias}>
+                    {m.alias} ({m.tier})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Force cloud toggle — only meaningful in production mode.
+              In demo mode the router already sends every request to
+              OpenRouter (skips Ollama), so the toggle is a no-op and
+              would only mislead. */}
+          {demoMode === false && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setForceCloud((v) => !v)}
+                className="flex items-center gap-2 font-mono text-xs transition-colors"
+                style={{ color: forceCloud ? "var(--coral)" : "var(--ink-4)" }}
+              >
+                <span
+                  className="inline-block w-3 h-3 rounded border-2 transition-colors"
+                  style={{
+                    borderColor: forceCloud ? "var(--coral)" : "var(--rule)",
+                    background: forceCloud ? "var(--coral)" : "transparent",
+                  }}
+                />
+                Force cloud
+              </button>
+              <span className="font-mono text-xs" style={{ color: "var(--ink-4)" }}>
+                (bypass Ollama → OpenRouter)
+              </span>
+            </div>
+          )}
+        </div>
 
         {/* Text area + send */}
         <div className="flex gap-2 items-end">

@@ -21,6 +21,8 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from src.api.dependencies import (
     get_cache,
+    get_classifier,
+    get_decision_engine,
     get_embedder,
     get_inference_router,
     get_vector_store_dep,
@@ -35,6 +37,8 @@ from src.models.schemas import (
 )
 from src.retrieval.embedder import Embedder
 from src.retrieval.vector_store_factory import VectorStoreType
+from src.routing.classifier import QueryClassifier
+from src.routing.decision_engine import DecisionEngine
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +63,8 @@ async def query(
     store: VectorStoreType = Depends(get_vector_store_dep),
     cache: ResponseCache = Depends(get_cache),
     inference_router: InferenceRouter = Depends(get_inference_router),
+    classifier: QueryClassifier = Depends(get_classifier),
+    decision_engine: DecisionEngine = Depends(get_decision_engine),
 ) -> QueryResponse:
     """
     Process a natural language query over indexed enterprise documents.
@@ -72,6 +78,12 @@ async def query(
       6. Cache and return response
     """
     start = time.perf_counter()
+
+    # ── Step 0: Classify the query (Phase 2) ──────────────────────
+    # Produce a multi-dimensional QueryProfile before any retrieval or
+    # inference. In Phase 3 the Decision Engine will consume this profile
+    # to select the optimal model automatically.
+    profile = classifier.classify(request.query)
 
     # ── Step 1: Embed ────────────────────────────────────────────
     query_vector = embedder.embed_single(request.query)
@@ -114,13 +126,36 @@ async def query(
             cached=True,
             sources=sources,
             latency_ms=round(latency, 2),
+            classification=profile,
         )
 
     # ── Step 5: Inference ────────────────────────────────────────
-    answer, used_provider = await inference_router.complete(
-        prompt=grounded_prompt,
-        force_cloud=request.force_cloud,
-    )
+    # Phase 3: automatic model selection via the Decision Engine.
+    #   - If the caller specified an explicit model (request.model),
+    #     use it directly (Phase 1 explicit selection).
+    #   - If force_cloud is set, use the legacy cloud path.
+    #   - Otherwise, let the Decision Engine select the optimal model
+    #     based on the QueryProfile and cost budget.
+    routing_decision = None
+
+    if request.model:
+        answer, used_provider, model_alias = await inference_router.complete_with_model(
+            prompt=grounded_prompt,
+            model_alias=request.model,
+        )
+    elif request.force_cloud:
+        answer, used_provider = await inference_router.complete(
+            prompt=grounded_prompt,
+            force_cloud=True,
+        )
+        model_alias = None
+    else:
+        # ── Automatic routing (Phase 3) ──────────────────────────
+        routing_decision = await decision_engine.decide(profile)
+        answer, used_provider, model_alias = await inference_router.complete_with_model(
+            prompt=grounded_prompt,
+            model_alias=routing_decision.selected_model,
+        )
 
     provider_enum = (
         InferenceProvider.local
@@ -138,4 +173,7 @@ async def query(
         cached=False,
         sources=sources,
         latency_ms=round(latency, 2),
+        model_alias=model_alias,
+        classification=profile,
+        routing_decision=routing_decision,
     )
