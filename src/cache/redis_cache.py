@@ -53,11 +53,27 @@ class ResponseCache:
         port: int = REDIS_PORT,
         ttl: int = CACHE_TTL_SECONDS,
     ) -> None:
+        # Short socket timeout so cache operations fail fast when Redis is
+        # unreachable — the gateway degrades gracefully (cache miss) rather
+        # than hanging the request.
+        socket_timeout = 2.0
+        socket_connect_timeout = 2.0
         if redis_url:
-            self._client = aioredis.from_url(redis_url, decode_responses=True)
+            self._client = aioredis.from_url(
+                redis_url,
+                decode_responses=True,
+                socket_timeout=socket_timeout,
+                socket_connect_timeout=socket_connect_timeout,
+            )
             logger.info("Redis cache initialised via REDIS_URL.")
         else:
-            self._client = aioredis.Redis(host=host, port=port, decode_responses=True)
+            self._client = aioredis.Redis(
+                host=host,
+                port=port,
+                decode_responses=True,
+                socket_timeout=socket_timeout,
+                socket_connect_timeout=socket_connect_timeout,
+            )
             logger.info("Redis cache initialised via host=%s port=%d.", host, port)
         self._ttl = ttl
 
