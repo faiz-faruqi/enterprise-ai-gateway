@@ -102,14 +102,24 @@ SENSITIVITY_INTERNAL_KEYWORDS = [
 # ── RAG-needed indicators ────────────────────────────────────────────────────
 
 RAG_NEEDED_PATTERNS = [
+    # first-person / company ownership signals
     r"\bour\b", r"\bwe\b", r"\bcompany\b", r"\borganization\b",
-    r"\bpolicy\b", r"\bdocument\b", r"\bcontract\b", r"\bagreement\b",
+    # document type signals — singular AND plural
+    r"\bpolic(y|ies)\b", r"\bdocuments?\b", r"\bcontracts?\b",
+    r"\bagreements?\b", r"\bclause(s)?\b", r"\bobligation(s)?\b",
+    r"\bterm(s|ination)?\b", r"\bsla\b", r"\bnda(s)?\b",
+    r"\bprovision(s)?\b", r"\bannex(es)?\b", r"\bschedule(s)?\b",
+    r"\bliabilit(y|ies)\b", r"\bindemnif(y|ication)\b",
+    r"\bpenalt(y|ies)\b", r"\bwarranty\b", r"\bwarranties\b",
+    # retrieval-intent signals
     r"\bwho is\b", r"\bwhat does.*say\b", r"\baccording to\b",
-    r"\bfind\b", r"\bsearch\b", r"\bwhere is\b",
+    r"\bfind\b", r"\bsearch\b", r"\bwhere is\b", r"\blist\b",
+    r"\bwhich\b", r"\bshow me\b", r"\bdo we have\b",
 ]
 RAG_NOT_NEEDED_PATTERNS = [
     r"\bexplain\b", r"\bdefine\b", r"\bwhat is\b", r"\bhow does\b.{0,30}(work|function)",
-    r"\btutorial\b", r"\bexample of\b",
+    r"\btutorial\b", r"\bexample of\b", r"\bwhat are the best\b",
+    r"\bgeneral(ly)?\b", r"\bin general\b",
 ]
 
 # ── Batch / latency indicators ───────────────────────────────────────────────

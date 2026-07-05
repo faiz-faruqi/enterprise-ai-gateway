@@ -167,7 +167,7 @@ class TestQueryEndpoint:
         self, mock_embedder, mock_cache, mock_router,
         mock_classifier, mock_decision_engine,
     ):
-        """When vector search returns empty results, endpoint returns 404."""
+        """When RAG is needed and vector search returns empty results, endpoint returns 404."""
         empty_store = AsyncMock()
         empty_store.search = AsyncMock(return_value=[])
         app.dependency_overrides[get_embedder] = lambda: mock_embedder
@@ -177,9 +177,33 @@ class TestQueryEndpoint:
         app.dependency_overrides[get_classifier] = lambda: mock_classifier
         app.dependency_overrides[get_decision_engine] = lambda: mock_decision_engine
         with TestClient(app) as c:
-            response = c.post("/query/", json={"query": "Any question"})
+            # Use a query that triggers rag_needed=True (contains 'contracts')
+            response = c.post("/query/", json={"query": "Which contracts have termination clauses?"})
         app.dependency_overrides.clear()
         assert response.status_code == 404
+
+    def test_query_bypasses_rag_for_general_knowledge(
+        self, mock_embedder, mock_cache, mock_router,
+        mock_classifier, mock_decision_engine, mock_store,
+    ):
+        """When rag_needed=False, the endpoint should not call the vector store."""
+        mock_cache.get.return_value = None
+        app.dependency_overrides[get_embedder] = lambda: mock_embedder
+        app.dependency_overrides[get_vector_store_dep] = lambda: mock_store
+        app.dependency_overrides[get_cache] = lambda: mock_cache
+        app.dependency_overrides[get_inference_router] = lambda: mock_router
+        app.dependency_overrides[get_classifier] = lambda: mock_classifier
+        app.dependency_overrides[get_decision_engine] = lambda: mock_decision_engine
+        with TestClient(app) as c:
+            # 'What is machine learning' has no RAG-trigger keywords
+            response = c.post("/query/", json={"query": "What is machine learning?"})
+        app.dependency_overrides.clear()
+        assert response.status_code == 200
+        data = response.json()
+        # Sources should be empty — no retrieval happened
+        assert data["sources"] == []
+        # rag_needed flag should be False in the classification
+        assert data["classification"]["rag_needed"] is False
 
     def test_query_validates_min_length(self, client):
         """Query shorter than 3 chars should be rejected by Pydantic."""
