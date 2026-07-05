@@ -119,5 +119,8 @@ class InferenceRouter:
 
         # Cloud model (or DEMO_MODE) — call directly.
         logger.info("Routing to explicit cloud model: %s", model_alias)
-        response = await provider.complete(prompt)
+        if provider.is_local and DEMO_MODE:
+            response = await self._openrouter.complete(prompt)
+        else:
+            response = await provider.complete(prompt)
         return response, ProviderResult.CLOUD, model_alias
