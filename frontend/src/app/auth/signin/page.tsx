@@ -58,7 +58,7 @@ export default function SignIn() {
                 className="font-serif text-[18px] tracking-[-0.01em]"
                 style={{ color: "var(--ink)" }}
               >
-                Local-First Hybrid AI Platform
+                Enterprise AI Gateway
               </h1>
               <p
                 className="font-mono text-[10px] uppercase tracking-[.06em]"

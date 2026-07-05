@@ -75,9 +75,9 @@ export default function DemoPage() {
               className="font-serif text-2xl leading-tight"
               style={{ color: "var(--ink)", letterSpacing: "-0.01em" }}
             >
-              Local-First{" "}
+              Enterprise AI{" "}
               <em className="italic" style={{ color: "var(--accent)" }}>
-                Hybrid AI Platform
+                Gateway
               </em>
             </h1>
           </div>

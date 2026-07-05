@@ -57,12 +57,12 @@ export default function ArchDiagram({ activeProvider, isLoading }: ArchDiagramPr
       // In demo mode the "local" tier is actually served via OpenRouter,
       // so highlight the cloud node instead of the (absent) Ollama node.
       if (demoMode) {
-        setHl({ user: true, fastapi: true, qdrant: true, openrouter: true, response: true });
+        setHl({ user: true, fastapi: true, qdrant: true, redis: true, infer: true, openrouter: true, response: true });
       } else {
-        setHl({ user: true, fastapi: true, qdrant: true, ollama: true, response: true });
+        setHl({ user: true, fastapi: true, qdrant: true, redis: true, infer: true, ollama: true, response: true });
       }
     } else if (activeProvider === "cloud") {
-      setHl({ user: true, fastapi: true, qdrant: true, openrouter: true, response: true });
+      setHl({ user: true, fastapi: true, qdrant: true, redis: true, infer: true, openrouter: true, response: true });
     }
   }, [activeProvider, isLoading, demoMode]);
 
@@ -147,7 +147,7 @@ export default function ArchDiagram({ activeProvider, isLoading }: ArchDiagramPr
         <div className={dim("redis")} style={{ color: color("redis", "#854f0b") }}>
           ├─▶ Redis
         </div>
-        <div className={dim("fastapi")} style={{ color: color("fastapi", "var(--accent-mid)") }}>
+        <div className={dim("infer")} style={{ color: color("infer", "var(--accent-mid)") }}>
           │  cache miss → infer
         </div>
         {demoMode === true && (
